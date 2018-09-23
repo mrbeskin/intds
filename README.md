@@ -7,7 +7,7 @@ The `intds` CLI starts a client or server, both of which live on your machine as
 ### server
 The `intds` server listens for a connection and, upon establishing that connection, will stream data from the client. 
 ```
-$ intds server --port 8080
+$ intds server --port <port>
 ```
 The gRPC calls can be generated so that once a server is running, it may be used to both send and receive data.
 
