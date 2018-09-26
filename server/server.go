@@ -1,9 +1,14 @@
 package server
 
 import (
+	"bufio"
+	"bytes"
+	"context"
+	"encoding/binary"
+	"fmt"
 	"net"
 
-	pb "github.com/mrbeskin/array-sender/grpc/data"
+	pb "github.com/mrbeskin/intds/grpc/data"
 	"google.golang.org/grpc"
 )
 
@@ -13,14 +18,14 @@ const MAX_MSG_SIZE = 4096 // NOTE: The size of the array is bounded by this - re
 // TcpServer is the internal server used to send and receive messages with a client.
 type TcpServer struct {
 	Port int
-	out  <-chan pb.IntDataArray
-	in   chan<- pb.IntDataArray
+	out  chan pb.IntDataArray
+	in   chan pb.IntDataArray
 }
 
 // ListenTcp() Starts the Tcp which will listen for a connection, then use that connection to read Int data arrays and pass them off to channels
 // for the Grpc consumers to handle.
 func (s *TcpServer) ListenTcp() error {
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%v", port))
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%v", s.Port))
 	if err != nil {
 		return fmt.Errorf("unable to start tcp server for client/server: %v", err)
 	}
@@ -30,29 +35,31 @@ func (s *TcpServer) ListenTcp() error {
 	}
 	buf := make([]byte, MAX_MSG_SIZE)
 	reader := bufio.NewReader(conn)
-	go s.handleSends()
+	go s.handleSends(conn)
 	for {
 		size, err := reader.Read(buf)
-		if err != nill {
-			return fmt.Sprintf("failure reading from connection: %v", err)
+		if err != nil {
+			return fmt.Errorf("failure reading from connection: %v", err)
 		}
 		ida := pb.IntDataArray{}
-		err = binary.Read(buf[:size], binary.BigEndian, &ida)
+		err = binary.Read(bytes.NewBuffer(buf[:size]), binary.BigEndian, &ida)
 		if err != nil {
 			return fmt.Errorf("failed to convert binary data to data array: %v", err)
 		}
-		out <- ida
+		s.out <- ida
 	}
 }
 
 // handleSends  takes IntDataArrays to the client.
-func (s *TcpServer) handleSends(conn *net.Conn) {
-	writer, err := bufio.NewWriter(conn)
-	if err != nil {
-		panic(err)
-	}
+func (s *TcpServer) handleSends(conn net.Conn) {
+	writer := bufio.NewWriter(conn)
 	for data := range s.in {
-		writer.Write([]byte(data))
+		buf := &bytes.Buffer{}
+		binary.Write(buf, binary.BigEndian, data)
+		_, err := writer.Write(buf.Bytes())
+		if err != nil {
+			panic(err)
+		}
 	}
 }
 
@@ -62,9 +69,9 @@ type GrpcServer struct {
 }
 
 // GetIntDataArrays implements the gRPC function which streams data to the gRPC client.
-func (grpcs *GrpcServer) GetIntDataArrays(ctx context.Context, in *pb.GetIntDataArrayStreamRequest, stream pb.Data_GetIntDataArraysServer) error {
+func (grpcs *GrpcServer) GetIntDataArrays(in *pb.GetIntDataArrayStreamRequest, stream pb.DataServer_GetIntDataArraysServer) error {
 	for d := range grpcs.tcps.out {
-		err := stream.Send(d)
+		err := stream.Send(&d)
 		if err != nil {
 			return err
 		}
@@ -73,8 +80,10 @@ func (grpcs *GrpcServer) GetIntDataArrays(ctx context.Context, in *pb.GetIntData
 }
 
 // WriteIntDataArray implements the gRPCfunction that allows the server to write a data array to the client
-func (grpcs *GrpcServer) WriteIntDataArray(dataArray *pb.IntDataArray) (*pb.ServerSendResponse, error) {
-	s.GetClientConnection()
+func (grpcs *GrpcServer) WriteIntDataArray(context context.Context, dataArray *pb.IntDataArray) (*pb.ServerSendResponse, error) {
+	// TODO: Implement using handle sends
+	//grpcs.GetClientConnection()
+	return &pb.ServerSendResponse{}, nil
 }
 
 // ListenGrpc starts the server and its internal tcp server and begins accepting connections from clients
@@ -86,4 +95,5 @@ func (grpcs *GrpcServer) ListenGrpc() error {
 	grpcServer := grpc.NewServer()
 	pb.RegisterDataServerServer(grpcServer, grpcs)
 	grpcServer.Serve(lis)
+	return nil
 }
