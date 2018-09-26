@@ -8,7 +8,7 @@ import (
 )
 
 // TODO: Document this, or handle arbitrarily large payloads - the goal is for all TCP traffic to only require a single packet every time.
-const MAX_BUF_SIZE = 4096 // NOTE: The size of the array is bounded by this - receiving payloads of larger than this size will cause corruption
+const MAX_MSG_SIZE = 4096 // NOTE: The size of the array is bounded by this - receiving payloads of larger than this size will cause corruption
 
 // TcpServer is the internal server used to send and receive messages with a client.
 type TcpServer struct {
@@ -24,12 +24,35 @@ func (s *TcpServer) ListenTcp() error {
 	if err != nil {
 		return fmt.Errorf("unable to start tcp server for client/server: %v", err)
 	}
+	conn, err := lis.Accept()
+	if err != nil {
+		return fmt.Errorf("unable to accept connection from client: %v", err)
+	}
+	buf := make([]byte, MAX_MSG_SIZE)
+	reader := bufio.NewReader(conn)
+	go s.handleSends()
 	for {
-		connection, err := lis.Accept()
-		if err != nil {
-			return fmt.Errorf("unable to accept connection from client: %v", err)
+		size, err := reader.Read(buf)
+		if err != nill {
+			return fmt.Sprintf("failure reading from connection: %v", err)
 		}
-		size, _ := strconv.ParseInt(strings.Trim(string(bufferFileSize), ":"), 10, 64)
+		ida := pb.IntDataArray{}
+		err = binary.Read(buf[:size], binary.BigEndian, &ida)
+		if err != nil {
+			return fmt.Errorf("failed to convert binary data to data array: %v", err)
+		}
+		out <- ida
+	}
+}
+
+// handleSends  takes IntDataArrays to the client.
+func (s *TcpServer) handleSends(conn *net.Conn) {
+	writer, err := bufio.NewWriter(conn)
+	if err != nil {
+		panic(err)
+	}
+	for data := range s.in {
+		writer.Write([]byte(data))
 	}
 }
 
