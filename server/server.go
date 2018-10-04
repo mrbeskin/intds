@@ -22,6 +22,14 @@ type TcpServer struct {
 	in   chan pb.IntDataArray
 }
 
+func NewTcpServer(port int) *TcpServer {
+	return &TcpServer{
+		Port: port,
+		out:  make(chan pb.IntDataArray),
+		in:   make(chan pb.IntDataArray),
+	}
+}
+
 // ListenTcp() Starts the Tcp which will listen for a connection, then use that connection to read Int data arrays and pass them off to channels
 // for the Grpc consumers to handle.
 func (s *TcpServer) ListenTcp() error {
@@ -58,7 +66,7 @@ func (s *TcpServer) handleSends(conn net.Conn) {
 		binary.Write(buf, binary.BigEndian, data)
 		_, err := writer.Write(buf.Bytes())
 		if err != nil {
-			panic(err)
+			fmt.Println(fmt.Errorf("could not send data: %v", err))
 		}
 	}
 }
@@ -82,7 +90,7 @@ func (grpcs *GrpcServer) GetIntDataArrays(in *pb.GetIntDataArrayStreamRequest, s
 // WriteIntDataArray implements the gRPCfunction that allows the server to write a data array to the client
 func (grpcs *GrpcServer) WriteIntDataArray(context context.Context, dataArray *pb.IntDataArray) (*pb.ServerSendResponse, error) {
 	// TODO: Implement using handle sends
-	//grpcs.GetClientConnection()
+	grpcs.tcps.in <- *dataArray
 	return &pb.ServerSendResponse{}, nil
 }
 
