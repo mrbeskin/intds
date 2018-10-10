@@ -27,14 +27,13 @@ func NewTcpClient(host string, port string) *TcpClient {
 	}
 }
 
-func (tcpClient *TcpClient) DialTcp() error {
+func (tcpClient *TcpClient) DialTcp() {
 	conn, err := net.Dial("tcp", fmt.Sprintf("%v:%v", tcpClient.serverHost, tcpClient.serverPort))
 	if err != nil {
-		return err
+		panic(err)
 	}
 	go tcpClient.handleIncoming(conn)
-	go tcpClient.handleOutgoing(conn)
-	return nil
+	tcpClient.handleOutgoing(conn)
 }
 
 const MAX_MSG_SIZE = 4096 // TODO: config
