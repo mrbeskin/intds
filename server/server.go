@@ -17,12 +17,12 @@ const MAX_MSG_SIZE = 4096 // NOTE: The size of the array is bounded by this - re
 
 // TcpServer is the internal server used to send and receive messages with a client.
 type TcpServer struct {
-	Port int
+	Port string
 	out  chan pb.IntDataArray
 	in   chan pb.IntDataArray
 }
 
-func NewTcpServer(port int) *TcpServer {
+func NewTcpServer(port string) *TcpServer {
 	return &TcpServer{
 		Port: port,
 		out:  make(chan pb.IntDataArray),
@@ -32,27 +32,29 @@ func NewTcpServer(port int) *TcpServer {
 
 // ListenTcp() Starts the Tcp which will listen for a connection, then use that connection to read Int data arrays and pass them off to channels
 // for the Grpc consumers to handle.
-func (s *TcpServer) ListenTcp() error {
+func (s *TcpServer) ListenTcp() {
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%v", s.Port))
 	if err != nil {
-		return fmt.Errorf("unable to start tcp server for client/server: %v", err)
+		panic(fmt.Errorf("unable to start tcp server for client/server: %v", err))
 	}
+	fmt.Println(fmt.Printf("listening on: %v\n", lis.Addr()))
 	conn, err := lis.Accept()
 	if err != nil {
-		return fmt.Errorf("unable to accept connection from client: %v", err)
+		panic(fmt.Errorf("unable to accept connection from client: %v", err))
 	}
 	buf := make([]byte, MAX_MSG_SIZE)
 	reader := bufio.NewReader(conn)
 	go s.handleSends(conn)
 	for {
+		fmt.Println("connected to client")
 		size, err := reader.Read(buf)
 		if err != nil {
-			return fmt.Errorf("failure reading from connection: %v", err)
+			fmt.Println(fmt.Errorf("failure reading from connection: %v", err))
 		}
 		ida := pb.IntDataArray{}
 		err = binary.Read(bytes.NewBuffer(buf[:size]), binary.BigEndian, &ida)
 		if err != nil {
-			return fmt.Errorf("failed to convert binary data to data array: %v", err)
+			fmt.Println(fmt.Errorf("failed to convert binary data to data array: %v", err))
 		}
 		s.out <- ida
 	}
