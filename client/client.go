@@ -15,26 +15,27 @@ import (
 type TcpClient struct {
 	serverHost string
 	serverPort string
+	grpcPort   string
 	in         chan pb.IntDataArray
 	out        chan pb.IntDataArray
 }
 
-func NewTcpClient(host string, port string) *TcpClient {
+func NewTcpClient(host string, port string, grpcPort string) *TcpClient {
 	return &TcpClient{
 		serverHost: host,
 		serverPort: port,
+		grpcPort:   grpcPort,
 		in:         make(chan pb.IntDataArray),
 	}
 }
 
-func (tcpClient *TcpClient) DialTcp() error {
+func (tcpClient *TcpClient) DialTcp() {
 	conn, err := net.Dial("tcp", fmt.Sprintf("%v:%v", tcpClient.serverHost, tcpClient.serverPort))
 	if err != nil {
-		return err
+		panic(err)
 	}
 	go tcpClient.handleIncoming(conn)
-	go tcpClient.handleOutgoing(conn)
-	return nil
+	tcpClient.handleOutgoing(conn)
 }
 
 const MAX_MSG_SIZE = 4096 // TODO: config
@@ -72,7 +73,7 @@ func (tcpClient *TcpClient) WriteIntDataArray(ctx context.Context, dataArray *pb
 }
 
 func (tcpClient *TcpClient) ListenGrpc() error {
-	lis, err := net.Listen("tcp", "0")
+	lis, err := net.Listen("tcp", tcpClient.grpcPort)
 	if err != nil {
 		return fmt.Errorf("unable to start tcp server for grpc: %v", err)
 	}
