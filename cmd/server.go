@@ -16,7 +16,7 @@ var serverCmd = &cobra.Command{
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("intds server starting . . .")
-		s := server.NewTcpServer(port)
+		s := server.NewTcpServer(serverPort)
 		s.ListenTcp()
 	},
 }

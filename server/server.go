@@ -37,7 +37,7 @@ func (s *TcpServer) ListenTcp() {
 	if err != nil {
 		panic(fmt.Errorf("unable to start tcp server for client/server: %v", err))
 	}
-	fmt.Println(fmt.Printf("listening on: %v\n", lis.Addr()))
+	fmt.Printf("listening on: %v\n", lis.Addr())
 	conn, err := lis.Accept()
 	if err != nil {
 		panic(fmt.Errorf("unable to accept connection from client: %v", err))
@@ -46,7 +46,7 @@ func (s *TcpServer) ListenTcp() {
 	reader := bufio.NewReader(conn)
 	go s.handleSends(conn)
 	for {
-		fmt.Println("connected to client")
+		fmt.Println("client connected")
 		size, err := reader.Read(buf)
 		if err != nil {
 			fmt.Println(fmt.Errorf("failure reading from connection: %v", err))
