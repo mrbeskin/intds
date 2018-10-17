@@ -8,6 +8,7 @@ import (
 )
 
 var serverPort string
+var serverGrpcPort string
 
 // serverCmd represents the server command
 var serverCmd = &cobra.Command{
@@ -24,5 +25,6 @@ var serverCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(serverCmd)
 	serverCmd.Flags().StringVarP(&serverPort, "port", "p", "", "Port on which to listen for connections. (Required)")
+	serverCmd.Flags().StringVarP(&serverGrpcPort, "gport", "g", "50051", "Port on which to listen to connection for the gRPC server.")
 	serverCmd.MarkFlagRequired("port")
 }

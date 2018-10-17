@@ -7,13 +7,25 @@ The `intds` CLI starts a client or server, both of which live on your machine as
 ### server
 The `intds` server listens for a connection and, upon establishing that connection, will stream data from the client. 
 ```
-$ intds server --port <port>
+$ intds server -p <port> -g <gRPC port>
 ```
 The gRPC calls can be generated so that once a server is running, it may be used to both send and receive data.
+
+The port for the `-p` flag is the port on which client connections are accepted and thus should correspond to the same flag on the corresponding client. 
+
+The `-g` flag is the one that the gRPC client will use to connect to this service. This defaults to `50051`.
 
 ### client
 The `intds` client can only send data to the server.
 ```
-$ intds client --host <server IP/hostname> --port <server port>
+$ intds client -H <server IP/hostname> -p <server port> -g <gRPC port>
 ```
 The client gRPC calls then may be used to send data to the server.
+
+The port for the `-p` flag is the port on which the server is accepting client connections and thus should correspond to the same flag on the server. 
+
+The `-g` flag is the one that the gRPC client will use to connect to this service. This defaults to `50051`.
+
+### Generating gRPC 
+
+Definitions are included for Go, Python and C#. For clients in other languages, please refer to the documentation on the [grpc site](https://grpc.io) for more information.

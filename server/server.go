@@ -17,16 +17,18 @@ const MAX_MSG_SIZE = 4096 // NOTE: The size of the array is bounded by this - re
 
 // TcpServer is the internal server used to send and receive messages with a client.
 type TcpServer struct {
-	Port string
-	out  chan pb.IntDataArray
-	in   chan pb.IntDataArray
+	Port     string
+	grpcPort string
+	out      chan pb.IntDataArray
+	in       chan pb.IntDataArray
 }
 
-func NewTcpServer(port string) *TcpServer {
+func NewTcpServer(port string, grpcPort string) *TcpServer {
 	return &TcpServer{
-		Port: port,
-		out:  make(chan pb.IntDataArray),
-		in:   make(chan pb.IntDataArray),
+		Port:     port,
+		grpcPort: grpcPort,
+		out:      make(chan pb.IntDataArray),
+		in:       make(chan pb.IntDataArray),
 	}
 }
 
@@ -98,7 +100,7 @@ func (grpcs *GrpcServer) WriteIntDataArray(context context.Context, dataArray *p
 
 // ListenGrpc starts the server and its internal tcp server and begins accepting connections from clients
 func (grpcs *GrpcServer) ListenGrpc() error {
-	lis, err := net.Listen("tcp", "0")
+	lis, err := net.Listen("tcp", grpcs.tcps.grpcPort)
 	if err != nil {
 		return fmt.Errorf("unable to start tcp server for grpc: %v", err)
 	}
