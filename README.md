@@ -28,4 +28,8 @@ The `-g` flag is the one that the gRPC client will use to connect to this servic
 
 ### Generating gRPC 
 
-Definitions are included for Go, Python and C#. For clients in other languages, please refer to the documentation on the [grpc site](https://grpc.io) for more information.
+Definitions are included for Go and Python . For clients in other languages, please refer to the documentation on the [grpc site](https://grpc.io) for more information.
+
+For Python, the directions for creating a client are located [here](https://grpc.io/docs/tutorials/basic/python.html).
+
+For C#, the directions for creating a client are located [here](https://developers.google.com/protocol-buffers/docs/reference/csharp-generated)
